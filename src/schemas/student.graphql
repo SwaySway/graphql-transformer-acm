@@ -1,0 +1,19 @@
+# admins are able to create student records
+# any student can read records of other students
+# A student (refereced by the student id) can do the following to their own record
+# - is allowed to change their email ONLY 
+# - read their ssn
+
+type Student
+  @model
+  @auth(rules: [
+  { allow: groups, groups: ["admin"] }
+  { allow: groups, groups: ["student"], operations: [read] }
+  ]) {
+  studentID: ID
+  name: String
+  email: AWSEmail @auth(rules: [{ allow: owner, ownerField: "studentID", operations: [update] }])
+  ssn: String @auth(rules: [
+    { allow: owner, ownerField: "studentID", operations: [read] }
+  ])
+}
