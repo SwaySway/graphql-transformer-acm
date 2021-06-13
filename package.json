@@ -4,7 +4,7 @@
   "description": "creates an acm based on @auth rules",
   "main": "src/index.ts",
   "scripts": {
-    "start": "tsc-node src/index.ts"
+    "start": "ts-node src/index.ts"
   },
   "keywords": [
     "nodejs",
@@ -13,13 +13,18 @@
   "author": "josue ruiz",
   "license": "MIT",
   "dependencies": {
+    "accesscontrol": "^2.2.1",
     "aws-sdk": "^2.924.0",
     "fs-extra": "^10.0.0",
     "graphql": "^15.5.0",
+    "micromatch": "^4.0.4",
+    "notation": "^2.0.0",
     "path": "^0.12.7",
     "ts-node": "^10.0.0"
   },
   "devDependencies": {
+    "@types/fs-extra": "^9.0.11",
+    "@types/micromatch": "^4.0.1",
     "cloudform": "^6.1.0",
     "typescript": "^4.0.2"
   }

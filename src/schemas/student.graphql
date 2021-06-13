@@ -7,13 +7,34 @@
 type Student
   @model
   @auth(rules: [
-  { allow: groups, groups: ["admin"] }
+  { allow: groups, groups: ["admin"], operations: [update] }
   { allow: groups, groups: ["student"], operations: [read] }
   ]) {
   studentID: ID
   name: String
-  email: AWSEmail @auth(rules: [{ allow: owner, ownerField: "studentID", operations: [update] }])
+  # protect email only studentID can edit
+  email: AWSEmail @auth(rules: [
+    { allow: owner, ownerField: "studentID", operations: [update] }
+    { allow: groups, groups: ["admin"] }
+  ])
+  # only allowed to admin and studentID if field rules are ANDed to object rules
   ssn: String @auth(rules: [
     { allow: owner, ownerField: "studentID", operations: [read] }
+    { allow: groups, groups: ["admin"] }
   ])
 }
+# studentID is the owner that can only update and read one specific
+
+# Update Student
+# Resolver Logic
+
+# Field Rules
+# (if studentID && email in UpdateStudent -> Allow ALL) -> DynamoDB Expression
+
+# Obj Rules
+
+# Function 1 get record 
+# evaluate the user if their authorized
+
+# Function 2 Mutation
+# put request to dynamodb
