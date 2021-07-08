@@ -1,5 +1,5 @@
 import { AccessControl } from 'accesscontrol';
-import { AuthRule } from '../utils/auth-rule';
+import { AuthRule, ModelOperation } from '../utils/auth-rule';
 /*
 -----prev design------
 object
@@ -18,37 +18,82 @@ provider (userPools/oidc/iam/apikey)
 The role list is then added into a acl
   where the resource is the type and the attributes are the fields of the type
 */
-export class GraphQLAC {
-  private ac: AccessControl;
-  private roles: Array<string>;
+
+export const MODEL_OPERATIONS: ModelOperation[] = ['create', 'read', 'update', 'delete'];
+export class ModelACM {
+  private roleIdentity: Map<string, any>;
+  private roles: Map<string, boolean[][]>;
+  private fields: Array<string>;
 
   constructor() {
-    this.ac = new AccessControl();
-    this.roles = new Array<string>();
+    this.roleIdentity = new Map<string, any>();
+    this.roles = new Map<string, boolean[][]>();
+    this.fields = new Array<string>();
   }
 
-  public addObjectRules(typeName: string, rules: AuthRule[]) {
+  public hasFields(): boolean {
+    return this.fields.length > 0;
+  }
+
+  public addFields(fields: Array<string>) {
+    this.fields = fields;
+  }
+
+  /*
+  ----params----
+  2. fields: [] -> if on obj include all fields
+  3. rules [] -> rules applied to the following fields
+  ----cases-----
+  1. add rules for the first time
+  2. add rules when being executed on the field
+
+   */
+  public addRules(rules: AuthRule[], field?: string) {
+    if(field && !this.hasFields()) throw Error('No fields added in acm - Add fields before adding field rules');
     for (const rule of rules) {
       // splitting the groups into their own respective roles
       if(rule.groups) {
         rule.groups.forEach( group => {
           const roleName = `${rule.provider}:staticGroup:${group}`;
-          this.roles.push(roleName);
-          this.addRoleToAC(roleName, typeName, rule);
+          this.roleIdentity.set(roleName, {
+            provider: rule.provider,
+            claim: rule.groupClaim,
+            value: rule.groups
+          })
         });
       } else {
         const roleName = this.getIdentity(rule);
-        this.addRoleToAC(roleName, typeName, rule);
       }
     }
   }
 
-  private getIdentity(rule: AuthRule): string {
+  public addFieldRules(rules: AuthRule[]) {
+    // add fields rules which includes the field and parent name
+    for (const rule of rules) {
+      if(rule.groups) {
+        rule.groups.forEach( group => {
+          const roleName = `${rule.provider}:staticGroup:${group}`;
+        });
+      } else {
+        const roleName = this.getIdentity(rule);
+      }
+    }
+  }
+
+  private getIdentity(rule: AuthRule): string | void {
     switch(rule.provider) {
       case 'apiKey':
-        return 'apiKey:public';
+        this.roleIdentity.set(
+          'apiKey:public',
+          { provider: rule.provider }
+        );
+        break;
       case 'iam':
-        return `iam:${rule.allow}`;
+        this.roleIdentity.set(`iam:${rule.allow}`, {
+          provider: rule.provider,
+          claim: (rule.allow === 'private' ? 'authenticated' : 'unauthenticated' )
+        })
+        break;
       case 'oidc':
       case 'userPools': {
         if(rule.allow === 'groups')return `${rule.provider}:dynamicGroup:${rule.groupsField}`;
@@ -59,23 +104,5 @@ export class GraphQLAC {
     }
   }
 
-  private addRoleToAC(roleName: string, typeName: string, rule: AuthRule) {
-    if(!rule.operations) {
-      this.ac.grant(roleName)
-        .resource(typeName)
-        .create()
-        .read()
-        .update()
-        .delete();
-    } else {
-      for (const operation in rule.operations) {
-        this.ac.grant({
-          role: roleName,
-          resource: typeName,
-          action: operation,
-          attributes: ['*']
-        });
-      }
-    }
-  }
+  
 }

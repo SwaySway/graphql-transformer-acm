@@ -1,0 +1,14 @@
+type Student @model @auth(rules: [{
+  and: [
+    { allow: owner, ownerField: "studentID" }
+    { or: [
+      { allow: groups, groupsField: "Professor" }
+      { allow: groups, groups: ["admin"] }
+    ]}]
+  operations: [update]
+  }
+]) {
+  id: ID
+  title: String
+  content: String
+}

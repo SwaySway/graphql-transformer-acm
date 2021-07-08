@@ -1,30 +1,39 @@
+# how to set sandbox mode
+type GLOBAL @auth
+
 # admins are able to create student records
 # any student can read records of other students
 # A student (refereced by the student id) can do the following to their own record
 # - is allowed to change their email ONLY 
 # - read their ssn
 
+type Post @model {
+  id: ID
+  content: String
+}
+
 type Student
   @model
   @auth(rules: [
-  { allow: groups, groups: ["admin"], operations: [update] }
+  { allow: groups, groups: ["admin"] }
   { allow: groups, groups: ["student"], operations: [read] }
   ]) {
   studentID: ID
   name: String
-  # protect email only studentID can edit
+  # protect email only studentID can update their own email
   email: AWSEmail @auth(rules: [
     { allow: owner, ownerField: "studentID", operations: [update] }
     { allow: groups, groups: ["admin"] }
   ])
-  # only allowed to admin and studentID if field rules are ANDed to object rules
+  # only allowed to student and admin
   ssn: String @auth(rules: [
     { allow: owner, ownerField: "studentID", operations: [read] }
     { allow: groups, groups: ["admin"] }
   ])
 }
-# studentID is the owner that can only update and read one specific
 
+# admin || studentIDOwner
+# studentID is the owner that can only update and read one specific
 # Update Student
 # Resolver Logic
 
