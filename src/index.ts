@@ -1,8 +1,6 @@
 import { ObjectTypeDefinitionNode, DirectiveNode, FieldDefinitionNode } from 'graphql';
 import { readSchema, getAuthRulesFromDirective, ensureDefaultAuthProviderAssigned } from './utils';
-import { ACM } from './ac/acm';
-import { ModelACM } from './ac';
-import { Access, AccessControl } from 'accesscontrol';
+import { ACM } from './ac'
 
 /*
 -----prev design------
@@ -30,19 +28,23 @@ async function main() {
   const type = schema.definitions[0] as ObjectTypeDefinitionNode;
   const authDir = type.directives?.find( dir => dir.name.value === 'auth') as DirectiveNode;
   const authRules = getAuthRulesFromDirective(authDir);
-  const modelacm = new ModelACM();
   // before evaluating rules since each model will have their own acm we need to ensure if the acm has the rules loaded in
-  if(!modelacm.hasFields()) {
-    const fields: string[] = type.fields!.reduce( (acc: string[], field: FieldDefinitionNode) => {
-      acc.push(field.name.value);
-      return acc;
-    }, []);
-    modelacm.addFields(fields);
-  }
-  for(const rule of authRules) {
+  const fields: string[] = type.fields!.reduce( (acc: string[], field: FieldDefinitionNode) => {
+    acc.push(field.name.value);
+    return acc;
+  }, []);
+  const acm = new ACM({typeName: 'student', resources: fields });
+  // add admin role
+  acm.addRole('userPools:staticGroup:admin',  ['create', 'read', 'update', 'delete']);
+  acm.addRole('userPools:staticGroup:student', ['read']);
+  acm.resetAccessForResource('email');
+  acm.addRole('userPools:owner:studentID', ['update'], 'email');
+  acm.resetAccessForResource('ssn');
+  acm.setAccess('userPools:owner:studentID', 'ssn', 'read', true);
+  acm.printTable();
 
-  }
 
+  
 }
 
 

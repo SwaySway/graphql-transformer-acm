@@ -1,4 +1,3 @@
-import { AccessControl } from 'accesscontrol';
 import { AuthRule, ModelOperation } from '../utils/auth-rule';
 /*
 -----prev design------
@@ -20,14 +19,14 @@ The role list is then added into a acl
 */
 
 export const MODEL_OPERATIONS: ModelOperation[] = ['create', 'read', 'update', 'delete'];
-export class ModelACM {
-  private roleIdentity: Map<string, any>;
-  private roles: Map<string, boolean[][]>;
+export class GraphQLACM {
+  private roleMap: Map<string, any>;
+  private roles: Array<string>;
   private fields: Array<string>;
 
   constructor() {
-    this.roleIdentity = new Map<string, any>();
-    this.roles = new Map<string, boolean[][]>();
+    this.roleMap = new Map<string, any>();
+    this.roles = new Array<string>();
     this.fields = new Array<string>();
   }
 
@@ -55,7 +54,7 @@ export class ModelACM {
       if(rule.groups) {
         rule.groups.forEach( group => {
           const roleName = `${rule.provider}:staticGroup:${group}`;
-          this.roleIdentity.set(roleName, {
+          this.roleMap.set(roleName, {
             provider: rule.provider,
             claim: rule.groupClaim,
             value: rule.groups
@@ -83,13 +82,13 @@ export class ModelACM {
   private getIdentity(rule: AuthRule): string | void {
     switch(rule.provider) {
       case 'apiKey':
-        this.roleIdentity.set(
+        this.roleMap.set(
           'apiKey:public',
           { provider: rule.provider }
         );
         break;
       case 'iam':
-        this.roleIdentity.set(`iam:${rule.allow}`, {
+        this.roleMap.set(`iam:${rule.allow}`, {
           provider: rule.provider,
           claim: (rule.allow === 'private' ? 'authenticated' : 'unauthenticated' )
         })

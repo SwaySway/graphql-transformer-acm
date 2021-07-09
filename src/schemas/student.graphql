@@ -1,5 +1,5 @@
 # how to set sandbox mode
-type GLOBAL @auth
+# type GLOBAL @auth
 
 # admins are able to create student records
 # any student can read records of other students
@@ -7,10 +7,10 @@ type GLOBAL @auth
 # - is allowed to change their email ONLY 
 # - read their ssn
 
-type Post @model {
-  id: ID
-  content: String
-}
+# type Post @model {
+#   id: ID
+#   content: String
+# }
 
 type Student
   @model
