@@ -37,14 +37,18 @@ async function main() {
   // add admin role
   acm.addRole('userPools:staticGroup:admin',  ['create', 'read', 'update', 'delete']);
   acm.addRole('userPools:staticGroup:student', ['read']);
+  // reset access for email
   acm.resetAccessForResource('email');
   acm.addRole('userPools:owner:studentID', ['update'], 'email');
+  acm.setAccess('userPools:staticGroup:admin', 'email', ['create', 'read', 'update', 'delete']);
+  // add back admin
   acm.resetAccessForResource('ssn');
-  acm.setAccess('userPools:owner:studentID', 'ssn', 'read', true);
+  acm.setAccess('userPools:owner:studentID', 'ssn', ['read']);
+  acm.setAccess('userPools:staticGroup:admin', 'ssn', ['create', 'read', 'update', 'delete']);
   acm.printTable();
 
 
-  
+
 }
 
 

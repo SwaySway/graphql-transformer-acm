@@ -40,19 +40,14 @@ export class ACM {
     this.validate(role, resource, operation);
   }
 
-  /**
-   * 
-   * @param role 
-   * @param resource 
-   * @param allow 
-   * @param access
-   */
-  public setAccess(roleName: string, resource: string, operation: string, access: boolean) {
-    this.validate(roleName, resource, operation);
-    const roleIndex = this.roles.indexOf(roleName);
+
+  public setAccess(role: string, resource: string, operations: string[]) {
+    if (!this.roles.includes(role)) throw Error(`Role: ${role} does not exist in ACM use addRole instead`);
+    if (!this.resources.includes(resource)) throw Error(`Resource: ${resource} is not configued in the ACM`);
+    const roleIndex = this.roles.indexOf(role);
     const resourceIndex = this.resources.indexOf(resource);
-    const operationIndex = this.operations.indexOf(operation);
-    this.matrix[roleIndex][resourceIndex][operationIndex] = access;
+    const operationList = this.getOperationList(operations);
+    this.matrix[roleIndex][resourceIndex] = operationList;
   }
 
   /**
@@ -77,6 +72,13 @@ export class ACM {
 
   public hasRole(roleName: string): boolean {
     return this.roles.includes(roleName);
+  }
+
+  public rolesPerOperation(operation: string) {
+    if (!this.operations.includes(operation)) throw Error(`Operation: ${operation} is not configured in ACM.`);
+    for(let x = 0; x < this.roles.length; x++) {
+      // this.resources.reduce( (prev, resource, index) => {  })
+    }
   }
 
   public printTable() {
