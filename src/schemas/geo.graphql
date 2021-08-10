@@ -1,0 +1,19 @@
+type DeviceModel {
+  name: String
+  lastLocation: String
+}
+
+type User @user {
+  id: ID
+  devices: [DeviceModel] @geo(locationName: "lastLocation")
+}
+
+# geo -> field this is ref by a user
+# geo -> type this is not attached to a user
+
+#### DeviceModel
+# - table for device model
+# - resolvers
+# - auth mode should lock to the user id
+
+# - createModel

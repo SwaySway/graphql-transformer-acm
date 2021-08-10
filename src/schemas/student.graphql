@@ -7,11 +7,6 @@
 # - is allowed to change their email ONLY 
 # - read their ssn
 
-# type Post @model {
-#   id: ID
-#   content: String
-# }
-
 type Student
   @model
   @auth(rules: [
@@ -23,6 +18,7 @@ type Student
   # protect email only studentID can update their own email
   email: AWSEmail @auth(rules: [
     { allow: owner, ownerField: "studentID", operations: [update] }
+    { allow: groups, groups: ["student"], operations: [read] }
     { allow: groups, groups: ["admin"] }
   ])
   # only allowed to student and admin
@@ -32,18 +28,4 @@ type Student
   ])
 }
 
-# admin || studentIDOwner
-# studentID is the owner that can only update and read one specific
-# Update Student
-# Resolver Logic
 
-# Field Rules
-# (if studentID && email in UpdateStudent -> Allow ALL) -> DynamoDB Expression
-
-# Obj Rules
-
-# Function 1 get record 
-# evaluate the user if their authorized
-
-# Function 2 Mutation
-# put request to dynamodb

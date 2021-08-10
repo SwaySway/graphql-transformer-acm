@@ -1,0 +1,31 @@
+
+
+
+type Lift
+  @model
+  @key(name: "liftsByUser", fields: ["owner"], queryField: "liftsByUser")
+  @key(
+    name: "liftsByFavorite"
+    fields: ["favorite"]
+    queryField: "liftsByFavorite"
+  )
+  @auth(
+    rules: [
+      {
+        allow: owner
+        ownerField: "owner"
+        operations: [create, update, delete, read]
+      }
+      { allow: private, operations: [read] }
+      { allow: public, operations: [read] }
+    ]
+  ) {
+  id: ID!
+  name: String!
+  description: String
+  tag: [String!]!
+  default: String!
+  favorite: String!
+  records: [Record!]! @connection(keyName: "byLift", fields: ["id"])
+  owner: String
+}

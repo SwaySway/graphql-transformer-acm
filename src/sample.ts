@@ -1,21 +1,21 @@
-import { ACM } from './ac/acm';
+import { ACM } from './ac/acm.sample';
 
 
 const updateOperation = (ctx: any, fields: any) => {
-  const authConditions = [];
+  let authCondition = false;
 
   // only two auth conditions here
   // check if they are admin
   if('admin' in ctx.identity.claims.get("cognito:groups")) {
-    authConditions.push(true);
+    authCondition = false;
   }
 
   // check if the owner rule is valid
   if('studentID' in ctx.identity.claims.get('cognito:username') && !fields.includes('ssn')) {
-    authConditions.push(true);
+    authCondition = false;
   }
 
-  if(authConditions.includes(false)) {
+  if(!authCondition) {
     throw Error('Not Authorized');
   }
 }
