@@ -1,9 +1,7 @@
 import { ObjectTypeDefinitionNode, DirectiveNode, FieldDefinitionNode } from 'graphql';
-import { readSchema, getAuthRulesFromDirective, ensureDefaultAuthProviderAssigned } from './utils';
+import { readSchema, getAuthRulesFromDirective, MODEL_OPERATIONS } from './utils';
 import { AccessControlMatrix } from './ac'
-import { MODEL_OPERATIONS } from './ac/graphql-ac.sample';
-import acm from 'aws-sdk/clients/acm';
-import { ModelOperation, DEFAULT_GROUP_CLAIM, DEFAULT_GROUPS_FIELD, DEFAULT_OWNER_FIELD, DEFAULT_IDENTITY_CLAIM, AuthRule } from './utils/auth-rule';
+import { ModelOperation, DEFAULT_GROUPS_FIELD, DEFAULT_OWNER_FIELD, AuthRule } from './utils/auth-rule';
 
 /*
 -----prev design------
@@ -57,18 +55,16 @@ The role list is then added into a acl
 function convertModelRulesToRoles(acm: AccessControlMatrix, authRules: AuthRule[], field?: string) {
   for (let rule of authRules) {
     let operations: ModelOperation[] = rule.operations || MODEL_OPERATIONS;
-    if (rule.groups) {
+    if (rule.groups && !rule.groupsField) {
       rule.groups.forEach(group => {
         let roleName = `${rule.provider}:staticGroup:${group}`;
         acm.setRole({ role: roleName, resource: field, operations });
       });
     } else {
-      var roleName: string;
-      let roleDefinition: any;
+      let roleName: string;
       switch (rule.provider) {
         case 'apiKey':
           roleName = 'apiKey:public';
-          roleDefinition = { provider: rule.provider };
           break;
         case 'iam':
           roleName = `iam:${rule.allow}`;
@@ -78,16 +74,17 @@ function convertModelRulesToRoles(acm: AccessControlMatrix, authRules: AuthRule[
           if (rule.allow === 'groups') {
             let groupsField = rule.groupsField || DEFAULT_GROUPS_FIELD;
             roleName = `${rule.provider}:dynamicGroup:${groupsField}`;
-          }
-          if (rule.allow === 'owner') {
+          } else if (rule.allow === 'owner') {
             let ownerField = rule.ownerField || DEFAULT_OWNER_FIELD;
             roleName = `${rule.provider}:owner:${ownerField}`;
+          } else if(rule.allow === 'private') {
+            roleName = `${rule.provider}:${rule.allow}`;
           } else {
-            throw new Error(`Could not create a role from ${rule}`);
+            throw new Error(`Could not create a role from ${JSON.stringify(rule)}`);
           }
           break;
         default:
-          throw new Error(`Could not create a role from ${rule}`);
+          throw new Error(`Could not create a role from ${JSON.stringify(rule)}`);
       }
       acm.setRole({ role: roleName, resource: field, operations });
     }
@@ -96,7 +93,6 @@ function convertModelRulesToRoles(acm: AccessControlMatrix, authRules: AuthRule[
 
 async function main() {
   const schema = readSchema('student.graphql');
-
   // only use first type
   // collect object rules
   const type = schema.definitions[0] as ObjectTypeDefinitionNode;
@@ -120,7 +116,12 @@ async function main() {
       convertModelRulesToRoles(acm, fieldAuthRules, fieldNode.name.value);
     }
   }
-  acm.printTable();
+  const truthTable = acm.getAcmPerRole();
+  for (let [role, acm] of truthTable) {
+    console.group(role)
+    console.table(acm);
+    console.groupEnd();
+  }
 }
 
 

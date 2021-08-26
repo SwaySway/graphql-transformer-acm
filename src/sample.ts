@@ -1,6 +1,3 @@
-import { ACM } from './ac/acm.sample';
-
-
 const updateOperation = (ctx: any, fields: any) => {
   let authCondition = false;
 
@@ -44,24 +41,7 @@ const updateStudent = (ctx: any, fields: any) => {
   }
 };
 
-export async function acmSample() {
-  const ownerStudentID = 'userPools:owner:studentID';
-  const userPoolAdmin = 'userPools:staticGroup:admin';
-  const userPoolStudent = 'userPools:staticGroup:student';
-  const roles = [userPoolAdmin, userPoolStudent, ownerStudentID];
-  const resources = ['studentID', 'name', 'email', 'ssn'];
-  const allows = ['create', 'read', 'update', 'delete'];
-  // Each element in matrix stores the permissions of a role to a resource.
-  const matrix = [
-      // studentID       name          email         ssn
-      [[true, true, true, true], [true, true, true, true], [true, true, true, true], [true, true, true, true]], // userPoolAdmin
-      [[false, true, false, false], [false, true, false, false], [false, true, false, false], [false, true, false, false]], // userPoolStudent
-      [[false, false, false, false], [false, false, false, false], [false, false, true, false], [false, true, false, false]], // ownerStudentID
-  ];
-  const acl = new ACM(roles, resources, allows, matrix);
-  console.log(acl.isAllowed(ownerStudentID, 'name', 'create'));
-
-}
+export async function acmSample() {}
 
 export async function aclSample() {
   // roles

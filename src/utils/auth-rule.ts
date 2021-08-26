@@ -8,7 +8,6 @@ export const ON_DELETE_FIELD = 'onDelete';
 export const AUTH_NON_MODEL_TYPES = 'authNonModelTypes';
 export const MODEL_OPERATIONS: ModelOperation[] = ['create', 'read', 'update', 'delete'];
 
-
 export type AuthStrategy = 'owner' | 'groups' | 'public' | 'private';
 export type AuthProvider = 'apiKey' | 'iam' | 'oidc' | 'userPools' | null;
 export type ModelQuery = 'get' | 'list';

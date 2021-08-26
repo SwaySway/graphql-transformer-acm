@@ -1,27 +1,27 @@
 import assert from 'assert';
 
 type ACMConfig = {
-  resources: string[],
-  operations: string[]
-}
+  resources: string[];
+  operations: string[];
+};
 
 type SetRoleInput = {
-  role: string,
-  operations: Array<string>,
-  resource?: string,
+  role: string;
+  operations: Array<string>;
+  resource?: string;
 };
 
 type ValidateInput = {
-  role?: string,
-  resource?: string,
-  operations?: Array<string>,
-}
+  role?: string;
+  resource?: string;
+  operations?: Array<string>;
+};
 
 type ResourceOperationInput = {
-  operations: Array<string>,
-  role?: string,
-  resource?: string,
-}
+  operations: Array<string>;
+  role?: string;
+  resource?: string;
+};
 
 /**
  * Creates an access control matrix
@@ -63,6 +63,14 @@ export class AccessControlMatrix {
     return this.roles.includes(role);
   }
 
+  public getRoles(): Array<string> {
+    return this.roles;
+  }
+
+  public getResources(): Readonly<Array<string>> {
+    return this.resources;
+  }
+
   public isAllowed(role: string, resource: string, operation: string): boolean {
     this.validate({ role, resource, operations: [operation] });
     const roleIndex = this.roles.indexOf(role);
@@ -74,40 +82,71 @@ export class AccessControlMatrix {
   public resetAccessForResource(resource: string): void {
     this.validate({ resource });
     const resourceIndex = this.resources.indexOf(resource);
-    for(let i=0; i < this.roles.length; i++) {
+    for (let i = 0; i < this.roles.length; i++) {
       this.matrix[i][resourceIndex] = new Array(this.operations.length).fill(false);
     }
   }
 
-  public printTable() {
-    for(let i=0; i < this.matrix.length; i++) {
-      console.log(this.roles[i]);
-      const tableObj: any = {};
-      for(let y=0; y < this.matrix[i].length; y++) {
-        tableObj[this.resources[y]] = this.matrix[i][y].reduce( (prev: any, resource: boolean, index: number) => {
+  /**
+   * Given an operation returns the roles which have access to at least one resource
+   * If fullAccess is true then it returns roles which have operation access on all resources
+   * @param operation string
+   * @param fullAccess boolean
+   * @returns array of roles
+   */
+  public getRolesPerOperation(operation: string, fullAccess: boolean = false): Array<string> {
+    this.validate({ operations: [operation] });
+    const operationIndex = this.operations.indexOf(operation);
+    const roles = new Array<string>();
+    for (let x = 0; x < this.roles.length; x++) {
+      let hasOperation: boolean = false;
+      if (fullAccess) {
+        hasOperation = this.resources.every((resource, idx) => {
+          return this.matrix[x][idx][operationIndex];
+        });
+      } else {
+        hasOperation = this.resources.some((resource, idx) => {
+          return this.matrix[x][idx][operationIndex];
+        });
+      }
+      if (hasOperation) roles.push(this.roles[x]);
+    }
+    return roles;
+  }
+
+  /**
+   * @returns a map of role and their access
+   * this object can then be used in console.table()
+   */
+  public getAcmPerRole(): Map<string, Object> {
+    const acmPerRole: Map<string, Object> = new Map();
+    for (let i = 0; i < this.matrix.length; i++) {
+      let tableObj: any = {};
+      for (let y = 0; y < this.matrix[i].length; y++) {
+        tableObj[this.resources[y]] = this.matrix[i][y].reduce((prev: any, resource: boolean, index: number) => {
           prev[this.operations[index]] = resource;
           return prev;
         }, {});
       }
-      console.table(tableObj); 
+      acmPerRole.set(this.roles[i], tableObj);
     }
+    return acmPerRole;
   }
-
 
   /**
    * helpers
    */
   private validate(input: ValidateInput) {
-    if(input.resource) {
-      if (!this.resources.includes(input.resource)) throw new Error(`Resource: ${input.resource} is not configued in the ACM`);
+    if (input.resource && !this.resources.includes(input.resource)) {
+      throw Error(`Resource: ${input.resource} is not configued in the ACM`);
     }
-    if(input.role) {
-      if (!this.roles.includes(input.role)) throw new Error(`Role: ${input.role} does not exist in ACM.`);
+    if (input.role && !this.roles.includes(input.role)) {
+      throw Error(`Role: ${input.role} does not exist in ACM.`);
     }
-    if(input.operations) {
-      input.operations.some(operation => {
-        if(this.operations.indexOf(operation) === -1) throw new Error(`Operation: ${operation} does not exist in the ACM.`);
-      })
+    if (input.operations) {
+      input.operations.forEach(operation => {
+        if (this.operations.indexOf(operation) === -1) throw Error(`Operation: ${operation} does not exist in the ACM.`);
+      });
     }
   }
 
@@ -119,20 +158,20 @@ export class AccessControlMatrix {
    * @param resource
    * @returns a 2d matrix containg the access for each resource
    */
-   private getResourceOperationMatrix(input: ResourceOperationInput): Array<Array<boolean>> {
+  private getResourceOperationMatrix(input: ResourceOperationInput): Array<Array<boolean>> {
     const { operations, resource, role } = input;
     let fieldAllowVector: boolean[][] = [];
     let operationList: boolean[] = this.getOperationList(operations);
-    if(role && resource) {
+    if (role && resource) {
       const roleIndex = this.roles.indexOf(role);
       const resourceIndex = this.resources.indexOf(resource);
       fieldAllowVector = this.matrix[roleIndex];
       fieldAllowVector[resourceIndex] = operationList;
       return fieldAllowVector;
     }
-    for(let i = 0; i < this.resources.length; i++) {
+    for (let i = 0; i < this.resources.length; i++) {
       if (resource) {
-        if(this.resources.indexOf(resource) === i) {
+        if (this.resources.indexOf(resource) === i) {
           fieldAllowVector.push(operationList);
         } else {
           fieldAllowVector.push(new Array(this.resources.length).fill(false));
@@ -146,8 +185,8 @@ export class AccessControlMatrix {
 
   private getOperationList(operations: Array<string>): Array<boolean> {
     let operationList: Array<boolean> = new Array();
-    for(let operation of this.operations) {
-      operationList.push(operations.includes(operation) ? true : false);
+    for (let operation of this.operations) {
+      operationList.push(operations.includes(operation));
     }
     return operationList;
   }
